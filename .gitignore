@@ -9,4 +9,6 @@
 **.zip
 **/docs
 **/pyreverse_output
-/data
+/data/*.png
+/data/*.tiff
+/data/*.xtf
