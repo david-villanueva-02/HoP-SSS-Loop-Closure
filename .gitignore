@@ -1,0 +1,11 @@
+.vscode
+/build
+/install
+/log
+/.Manitas_venv
+/__pycache__/*
+**/__pycache__
+**.DS_Store
+**.zip
+**/docs
+**/pyreverse_output
