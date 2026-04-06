@@ -2,3 +2,6 @@ numpy
 pyproj 
 pyxtf 
 shapely
+scikit-learn
+transformers
+transformers
