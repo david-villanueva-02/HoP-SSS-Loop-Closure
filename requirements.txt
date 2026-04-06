@@ -1,10 +1,12 @@
+typeguard
+
+# Check CUDA version compatibility for PyTorch
+torch
+torchvision
+
 numpy 
 pyproj 
 pyxtf 
 shapely
 scikit-learn
 transformers
-
-# Check CUDA version compatibility for PyTorch
-torch
-torchvision

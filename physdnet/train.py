@@ -11,8 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
-# from torch.amp import GradScaler, autocast # Version compatibility
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast 
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from tqdm import tqdm
