@@ -2,14 +2,19 @@ import pyxtf
 import numpy as np
 import os
 import cv2
+from rpds import List
 
-input_dir = r'D:\dataset\2025\sept\0803'  # XTF file folder
-output_dir = r'D:\dataset\2025\sept\0803_dataset'
+# input_dir = r'D:\dataset\2025\sept\0803'  # XTF file folder
+# output_dir = r'D:\dataset\2025\sept\0803_dataset'
+
+input_dir = r'data'  # XTF file folder
+output_dir = r'output'  # Output dataset folder
 
 os.makedirs(output_dir, exist_ok=True)
 
 # Scan all .xtf files
-xtf_files = [f for f in os.listdir(input_dir) if f.lower().endswith('.xtf')]
+xtf_files_or = [f for f in os.listdir(input_dir) if f.lower().endswith('.xtf')]
+xtf_files = [xtf_files_or[0]] # Taking only the first file
 
 # The segment_size is the same as the number of sonar samples.
 segment_size = 2000
@@ -46,7 +51,7 @@ for file_idx, xtf_filename in enumerate(xtf_files):
     print(f'Processing file: {xtf_filename}')
     try:
         file_header, packets = pyxtf.xtf_read(file_path)
-        sonar_packets = packets[pyxtf.XTFHeaderType.sonar]
+        sonar_packets: list[pyxtf.XTFPingHeader] = packets[pyxtf.XTFHeaderType.sonar]
 
         for packet in sonar_packets:
             altitude = packet.SensorPrimaryAltitude

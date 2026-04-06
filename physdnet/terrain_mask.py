@@ -8,9 +8,11 @@ range_dir = r"D:\dataset\2025\sept\0803_dataset\test\range"
 
 # Predicted height map
 depth_dir = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\z_gray"
+
 # Store the grayscale image of the generated height map and the mask of its understated terrain areas.
 height_output_dir = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\height_visual"
 output_folder = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\z_mask"
+
 os.makedirs(height_output_dir, exist_ok=True)
 os.makedirs(output_folder, exist_ok=True)
 

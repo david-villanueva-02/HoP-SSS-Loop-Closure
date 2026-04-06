@@ -11,7 +11,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
-from torch.amp import GradScaler, autocast
+# from torch.amp import GradScaler, autocast # Version compatibility
+from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 from tqdm import tqdm
@@ -31,28 +32,31 @@ class TrainConfig:
     image_size: Tuple[int, int] = (512, 512)
 
     # Pre-trained weight path that need to be loaded
-    checkpoint_path: str =  r'C:\LastPC\Research\Research\dataset\threeD\optical_sonar\weight\best_model_v610_jaguar.pth'
+    # checkpoint_path: str =  r'C:\LastPC\Research\Research\dataset\threeD\optical_sonar\weight\best_model_v610_jaguar.pth'
+    checkpoint_path: str =  r'model/best_model_v610_jaguar.pth'
 
     # Weight path saved after training
-    save_path: str = r'C:\LastPC\Research\Research\dataset\threeD\optical_sonar\weight\final.pth'
+    save_path: str = r'model/final.pth'
+
     # Various training information log files
-    other_loss_log_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\train_other_loss_v606.txt"
-    train_loss_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\train_loss_v606.txt"
-    train_z_loss_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\train_z_loss_v606.txt"
-    train_shadow_loss_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\train_shadow_loss_v606.txt"
-    train_sss_loss_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\train_sss_loss_v606.txt"
-    val_loss_file: str = r"C:\LastPC\Research\Research\dataset\threeD\optical_sonar\logs\val_loss_v606.txt"
+    other_loss_log_file: str = r"model/logs/train_other_loss_v606.txt"
+    train_loss_file: str = r"model/logs/train_loss_v606.txt"
+    train_z_loss_file: str = r"model/logs/train_z_loss_v606.txt"
+    train_shadow_loss_file: str = r"model/logs/train_shadow_loss_v606.txt"
+    train_sss_loss_file: str = r"model/logs/train_sss_loss_v606.txt"
+    val_loss_file: str = r"model/logs/val_loss_v606.txt"
 
     # Training set data path
-    train_image_path: str = r"D:\dataset\2025\sept\0803_dataset\train\images"
-    train_range_path: str = r"D:\dataset\2025\sept\0803_dataset\train\range"
-    train_altitude_path: str = r"D:\dataset\2025\sept\0803_dataset\train\altitude"
-    train_shadow_path: str = r"D:\dataset\2025\sept\0803_dataset\train\shadow"
+    train_image_path: str = r"output/train/images"
+    train_range_path: str = r"output/train/range"
+    train_altitude_path: str = r"output/train/altitude"
+    train_shadow_path: str = r"output/train/shadow"
+
     # Validation set data path
-    val_image_path: str = r"D:\dataset\2025\sept\0803_dataset\val\images"
-    val_range_path: str = r"D:\dataset\2025\sept\0803_dataset\val\range"
-    val_altitude_path: str = r"D:\dataset\2025\sept\0803_dataset\val\altitude"
-    val_shadow_path: str = r"D:\dataset\2025\sept\0803_dataset\val\shadow"
+    val_image_path: str = r"output/val/images"
+    val_range_path: str = r"output/val/range"
+    val_altitude_path: str = r"output/val/altitude"
+    val_shadow_path: str = r"output/val/shadow"
 
 # =============================================================================
 # Model building blocks
@@ -546,7 +550,8 @@ def compute_shadow_loss_amp(
     focal_loss = focal_loss.mean()
 
     bce_loss = F.binary_cross_entropy_with_logits(shadow_logits_masked, gt_mask_masked)
-    return pred_mask, bce_loss + 0.1 * dice_loss + 0.1 * focal_loss
+    # return pred_mask, bce_loss + 0.1 * dice_loss + 0.1 * focal_loss
+    return bce_loss + 0.1 * dice_loss + 0.1 * focal_loss
 
 
 

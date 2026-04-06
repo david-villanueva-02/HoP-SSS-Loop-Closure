@@ -11,7 +11,8 @@ RANDOM_STATE = 42
 SPLIT_MODE = "image"  # options: "xtf", "image"
 
 # Root dataset directory
-DATASET_ROOT = Path(r"D:\dataset\2025\sept\0803_dataset")
+# DATASET_ROOT = Path(r"D:\dataset\2025\sept\0803_dataset")
+DATASET_ROOT = Path(r"output")
 
 # Source subdirectories
 SOURCE_DIRS: Dict[str, Path] = {

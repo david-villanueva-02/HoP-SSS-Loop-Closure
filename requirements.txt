@@ -4,4 +4,7 @@ pyxtf
 shapely
 scikit-learn
 transformers
-transformers
+
+# Check CUDA version compatibility for PyTorch
+torch
+torchvision
