@@ -3,15 +3,15 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 
-altitude_dir = r"D:\dataset\2025\sept\0803_dataset\test\altitude"
-range_dir = r"D:\dataset\2025\sept\0803_dataset\test\range"
+altitude_dir = r"output/altitude"
+range_dir = r"output/range"
 
 # Predicted height map
-depth_dir = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\z_gray"
+depth_dir = r"output/visual_test/z_gray"
 
 # Store the grayscale image of the generated height map and the mask of its understated terrain areas.
-height_output_dir = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\height_visual"
-output_folder = r"D:\dataset\2025\sept\0803_dataset\test\visual_test\z_mask"
+height_output_dir = r"output/visual_test/height_visual"
+output_folder = r"output/visual_test/z_mask"
 
 os.makedirs(height_output_dir, exist_ok=True)
 os.makedirs(output_folder, exist_ok=True)
@@ -96,7 +96,6 @@ for idx, filename in enumerate(os.listdir(input_folder)):
         mean_val = np.mean(img)
         std_val = np.std(img)
         shadow_mask = (img < mean_val - k * std_val).astype(np.uint8) * 255
-
 
         base_name = os.path.splitext(filename)[0]
         cv2.imwrite(os.path.join(output_folder, f"{base_name}.png"), shadow_mask)

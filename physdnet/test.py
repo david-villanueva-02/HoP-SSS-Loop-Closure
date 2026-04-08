@@ -141,7 +141,10 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
         arr = np.nan_to_num(arr)  # 去除 NaN
         arr = (arr > 0).astype(np.uint8) * 255  # 将非零值映射为255
         return arr
+    
     def numpy_to_img(arr):
+        if isinstance(arr, torch.Tensor): 
+            arr = arr.detach().cpu().numpy()
         arr = np.nan_to_num(arr)
         arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8) * 255
         return arr.astype(np.uint8)
@@ -202,7 +205,8 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
                 hori = compute_real_dis_horizontal(slant, altitude_b)
                 cos_theta = compute_theta_new(z_b, hori)
 
-                delta = 0.1,
+                delta = 0.1
+                # delta = 0.1,
                 temperature = 0.05
                 tan_phi = hori / z_b.clamp(min=1e-3)
                 phi_rad = torch.atan(tan_phi)
@@ -211,14 +215,15 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
                 shadow_logits = (cummax - phi_deg - delta) / temperature
                 shadow_pre_b = (torch.sigmoid(shadow_logits) > 0.5).to(torch.uint8) | (tan_phi <= 0)
 
-                visualize_matrix_auto(cos_theta, save_path=os.path.join(output_dir, "theta", f"{name_wo_ext}_theta.png"), symmetric=False)
-                visualize_matrix_auto(z_b, save_path=os.path.join(output_dir, "z", f"{name_wo_ext}_z.png"), symmetric=False)
-                visualize_matrix_auto(path_b, save_path=os.path.join(output_dir, "path", f"{name_wo_ext}_path.png"), symmetric=False)
-                visualize_matrix_auto(rho_b, save_path=os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), symmetric=False)
-                cv2.imwrite(os.path.join(output_dir, "z_gray", f"{name_wo_ext}_z.png"), numpy_to_img(z_b))
-                cv2.imwrite(os.path.join(output_dir, "shadow", f"{name_wo_ext}_shadow.png"),
+                visualize_matrix_auto(cos_theta, save_path=os.path.join(output_dir, "theta", f"{name_wo_ext}_theta.png"), symmetric=False) # incidence factor (is it theta or cos theta?)
+                visualize_matrix_auto(z_b, save_path=os.path.join(output_dir, "z", f"{name_wo_ext}_z.png"), symmetric=False)               # height z
+                visualize_matrix_auto(path_b, save_path=os.path.join(output_dir, "path", f"{name_wo_ext}_path.png"), symmetric=False)      # path loss L
+                visualize_matrix_auto(rho_b, save_path=os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), symmetric=False)         # reflectivity rho
+                cv2.imwrite(os.path.join(output_dir, "rho_gray", f"{name_wo_ext}_rho.png"), numpy_to_img(rho_b))                           # saves reflectivity as grayscale image
+                cv2.imwrite(os.path.join(output_dir, "z_gray", f"{name_wo_ext}_z.png"), numpy_to_img(z_b))                                 # saves height as grayscale image
+                cv2.imwrite(os.path.join(output_dir, "shadow", f"{name_wo_ext}_shadow.png"),                                                
                             tensor_to_twovalue(shadow_pre_b))
-                #cv2.imwrite(os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), numpy_to_img(rho_b))
+                #cv2.imwrite(os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), numpy_to_img(rho_b)) # why is this commented?
 
 
 if __name__ == '__main__':
@@ -230,13 +235,17 @@ if __name__ == '__main__':
     ])
 
     # Testing set data path
-    test_image_path = r'D:\dataset\2025\sept\0803_dataset\test\images'
-    test_range_path = r'D:\dataset\2025\sept\0803_dataset\test\range'
-    test_altitude_path = r'D:\dataset\2025\sept\0803_dataset\test\altitude'
+    test_image_path = r'output/images'
+    test_range_path = r'output/range'
+    test_altitude_path = r'output/altitude'
+
     # Trained weight path
-    weight_path = r'C:\weight\best_model_v610_jaguar.pth'
+    weight_path = r'best_model_v610_eagle.pth'
+    # weight_path = r'best_model_v610_jaguar.pth'
+    # weight_path = r'best_model_v611_jaguar.pth'
+    
     # Result saving path
-    output_dir = r'D:\dataset\2025\sept\0803_dataset\test\visual_test'
+    output_dir = r'output/visual_test'
 
     test_dataset = TestSonarImageDataset(test_image_path, test_range_path, test_altitude_path, transform=custom_transform)
 
