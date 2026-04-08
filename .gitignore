@@ -5,6 +5,8 @@
 /.Manitas_venv
 /__pycache__/*
 **/__pycache__
+**/.git
+**/.github
 **.DS_Store
 **.zip
 **.pth
