@@ -12,3 +12,4 @@ scikit-learn
 transformers
 opencv-python
 rpds-py
+kornia
