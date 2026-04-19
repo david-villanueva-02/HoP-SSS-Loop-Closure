@@ -4,6 +4,8 @@ import os
 import cv2
 from rpds import List
 
+from xtf_utils import calculate_blind_zone_indices
+
 # input_dir = r'D:\dataset\2025\sept\0803'  # XTF file folder
 # output_dir = r'D:\dataset\2025\sept\0803_dataset'
 
@@ -38,6 +40,7 @@ if overlap_size >= segment_size:
 
 stride = segment_size - overlap_size
 
+# For all the files in the directory
 for file_idx, xtf_filename in enumerate(xtf_files):
     file_path = os.path.join(input_dir, xtf_filename)
 
@@ -53,6 +56,12 @@ for file_idx, xtf_filename in enumerate(xtf_files):
         file_header, packets = pyxtf.xtf_read(file_path)
         sonar_packets: list[pyxtf.XTFPingHeader] = packets[pyxtf.XTFHeaderType.sonar]
 
+        # Remove from blind zones
+        left_idx, right_idx = calculate_blind_zone_indices(sonar_packets)
+
+        mask_left = None
+        mask_right = None
+
         for packet in sonar_packets:
             altitude = packet.SensorPrimaryAltitude
             range_left = packet.ping_chan_headers[0].SlantRange
@@ -63,20 +72,36 @@ for file_idx, xtf_filename in enumerate(xtf_files):
             range_right_list.append(range_right)
 
             if hasattr(packet, "data"):
+                # Filter and accumulate data
                 ping_data = getattr(packet, "data", None)
+
+
                 if isinstance(ping_data, list) and len(ping_data) >= 2:
-                    left_channel = ping_data[0]
+                    if mask_left is None or mask_right is None:
+                        mask_right = np.zeros((segment_size, ping_data[0].shape[0]))*0
+                        mask_right[:, left_idx] = 255
+                        mask_left = np.flip(mask_right)
+
+                        print("Mask calculated!")
+                        print(f"mask_left: {mask_left.shape}, mask_right: {mask_right.shape}")
+
+                    left_channel  = ping_data[0]
                     right_channel = ping_data[1]
 
                     if isinstance(left_channel, np.ndarray) and isinstance(right_channel, np.ndarray):
                         left_channel_data.append(left_channel)
                         right_channel_data.append(right_channel)
 
+        # Convert back into numpy arrays
         left_channel_data = np.array(left_channel_data)
         right_channel_data = np.array(right_channel_data)
         altitude_list = np.array(altitude_list)
         range_left_list = np.array(range_left_list)
         range_right_list = np.array(range_right_list)
+
+        # DEBUG
+        print(f"left channel data shape {left_channel_data.shape}")
+        print(f"left channel data shape {left_channel_data.size}")
 
         if left_channel_data.size > 0 and right_channel_data.size > 0:
             left_channel_data = np.clip(left_channel_data, 0, upper_limit - 1)
@@ -168,6 +193,15 @@ for file_idx, xtf_filename in enumerate(xtf_files):
                     os.path.join(output_dir, "range", f"{xtf_filename}_right_{i:03d}.npy"),
                     range_right_segment
                 )
+
+            cv2.imwrite(
+                os.path.join(output_dir, f"{xtf_filename}_mask_left.png"),
+                mask_left
+            )
+            cv2.imwrite(
+                os.path.join(output_dir, f"{xtf_filename}_mask_right.png"),
+                mask_right
+            )
 
             print(f"{xtf_filename}: total_rows={total_rows}, segments={len(start_positions)}, stride={stride}")
 

@@ -220,7 +220,7 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
                 visualize_matrix_auto(z_b, save_path=os.path.join(output_dir, "z", f"{name_wo_ext}_z.png"), symmetric=False)               # height z
                 visualize_matrix_auto(path_b, save_path=os.path.join(output_dir, "path", f"{name_wo_ext}_path.png"), symmetric=False)      # path loss L
                 visualize_matrix_auto(rho_b, save_path=os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), symmetric=False)         # reflectivity rho
-                cv2.imwrite(os.path.join(output_dir, "rho_gray", f"{name_wo_ext}_rho_gray.png"), numpy_to_img(rho_b))                           # saves reflectivity as grayscale image
+                cv2.imwrite(os.path.join(output_dir, "rho_gray", f"{name_wo_ext}_rho_gray.png"), numpy_to_img(rho_b))                      # saves reflectivity as grayscale image
                 cv2.imwrite(os.path.join(output_dir, "z_gray", f"{name_wo_ext}_z.png"), numpy_to_img(z_b))                                 # saves height as grayscale image
                 cv2.imwrite(os.path.join(output_dir, "shadow", f"{name_wo_ext}_shadow.png"),                                                
                             tensor_to_twovalue(shadow_pre_b))
