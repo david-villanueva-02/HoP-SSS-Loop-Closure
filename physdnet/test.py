@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
 import cv2
-from train import PhysDNet
+from .train import PhysDNet
 
 
 def compute_real_dis(A: torch.Tensor, M_list: torch.Tensor) -> torch.Tensor:
@@ -226,14 +226,34 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
                             tensor_to_twovalue(shadow_pre_b))
                 #cv2.imwrite(os.path.join(output_dir, "rho", f"{name_wo_ext}_rho.png"), numpy_to_img(rho_b)) # why is this commented?
 
+def run_inference(device: torch.device, 
+         test_image_path: str, test_range_path: str, test_altitude_path: str, weight_path: str, 
+         output_dir: str, side: str): 
+    
+    if side == "left": 
+        test_image_path = test_image_path.replace("output", "output_left")
+        test_range_path = test_range_path.replace("output", "output_left")
+        test_altitude_path = test_altitude_path.replace("output", "output_left")
+        output_dir = output_dir.replace("output", "output_left")
+    if side == "right": 
+        test_image_path = test_image_path.replace("output", "output_right")
+        test_range_path = test_range_path.replace("output", "output_right")
+        test_altitude_path = test_altitude_path.replace("output", "output_right")
+        output_dir = output_dir.replace("output", "output_right")
 
-if __name__ == '__main__':
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     triple_unet = PhysDNet().to(device)
 
     custom_transform = transforms.Compose([
         transforms.Resize((512, 512)),
     ])
+
+    test_dataset = TestSonarImageDataset(test_image_path, test_range_path, test_altitude_path, transform=custom_transform)
+
+    test_loader = DataLoader(test_dataset, batch_size=5, shuffle=False, num_workers=2, pin_memory=True)
+
+    pre_model(triple_unet, test_loader, weight_path, output_dir, device)
+
+if __name__ == '__main__':
 
     # Testing set data path
     test_image_path = r'output/images'
@@ -248,8 +268,5 @@ if __name__ == '__main__':
     # Result saving path
     output_dir = r'output/visual_test'
 
-    test_dataset = TestSonarImageDataset(test_image_path, test_range_path, test_altitude_path, transform=custom_transform)
-
-    test_loader = DataLoader(test_dataset, batch_size=5, shuffle=False, num_workers=2, pin_memory=True)
-
-    pre_model(triple_unet, test_loader, weight_path, output_dir, device)
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    run_inference(device, test_image_path, test_range_path, test_altitude_path, weight_path, output_dir)

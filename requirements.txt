@@ -10,3 +10,5 @@ pyxtf
 shapely
 scikit-learn
 transformers
+opencv-python
+rpds-py

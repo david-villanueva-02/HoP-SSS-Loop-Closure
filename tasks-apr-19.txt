@@ -1,0 +1,9 @@
+Tasks: 
+- Replace LightGlue with MINIMA
+- Apply blind zone masks for feature matches
+- Find a more efficient way to compute only necessary homographies
+- Check whether homographies are ok. Apply mosaicing between two consecutive images
+- Section the waterfall by each transact 
+- Apply homographies to each consecutive sections
+
+- Test different weight files for PhysDNet
