@@ -4,7 +4,10 @@ import os
 import cv2
 from rpds import List
 
-from .xtf_utils import calculate_blind_zone_indices
+try:
+    from .xtf_utils import calculate_blind_zone_indices
+except ImportError as e:
+    from xtf_utils import calculate_blind_zone_indices
 
 def generate_shadow(img):
     k = 1
@@ -74,9 +77,19 @@ def prepare_data(input_dir: str, output_dir: str, segment_size: int, overlap_siz
                             mask_right = np.zeros((segment_size, ping_data[0].shape[0]))*0
                             mask_right[:, left_idx] = 255
                             mask_left = np.flip(mask_right)
+                            
+                            # Invert left mask
+                            mask_left_inv = mask_left.copy()
+                            mask_left_inv[mask_left == 0] = 255
+                            mask_left_inv[mask_left == 255] = 0
+                            
+                            # Invert right mask
+                            mask_right_inv = mask_right.copy()
+                            mask_right_inv[mask_right == 0] = 255
+                            mask_right_inv[mask_right == 255] = 0
 
                             print("Mask calculated!")
-                            print(f"mask_left: {mask_left.shape}, mask_right: {mask_right.shape}")
+                            print(f"mask_left: {mask_left_inv.shape}, mask_right: {mask_right_inv.shape}")
 
                         left_channel  = ping_data[0]
                         right_channel = ping_data[1]
@@ -193,11 +206,11 @@ def prepare_data(input_dir: str, output_dir: str, segment_size: int, overlap_siz
 
                     cv2.imwrite(
                         os.path.join(output_dir, f"{xtf_filename}_mask_left.png"),
-                        mask_left
+                        mask_left_inv
                     )
                     cv2.imwrite(
                         os.path.join(output_dir, f"{xtf_filename}_mask_right.png"),
-                        mask_right
+                        mask_right_inv
                     )
 
                 print(f"{xtf_filename}: total_rows={total_rows}, segments={len(start_positions)}, stride={stride}")
