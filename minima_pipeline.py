@@ -139,7 +139,7 @@ def point_mask_test(points_xy: np.ndarray, mask: np.ndarray, threshold: int = 0)
     inside = (x >= 0) & (x < w) & (y >= 0) & (y < h)
 
     valid = np.zeros(len(points_xy), dtype=bool)
-    valid[inside] = mask[y[inside], x[inside]] > threshold
+    valid[inside] = mask[y[inside], x[inside]] == threshold
     return valid
 
 
@@ -170,8 +170,8 @@ def estimate_homography_ransac(
     mkpts0: np.ndarray,
     mkpts1: np.ndarray,
     ransac_reproj_threshold: float = 3.0,
-    max_iters: int = 2000,
-    confidence: float = 0.995,
+    max_iters: int = 10_000,   # 10k iterations according to the paper
+    confidence: float = 0.995, 
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Estimate homography with OpenCV RANSAC.
@@ -203,7 +203,9 @@ def run_pipeline_on_images(
     img1: np.ndarray,
     mask0: Optional[np.ndarray] = None,
     mask1: Optional[np.ndarray] = None,
-    ransac_reproj_threshold: float = 3.0,
+    ransac_reproj_threshold: float = 8.0,
+    ransac_max_iters: int = 10_000,
+    ransac_confidence: float = 0.995,
 ) -> MatchResult:
     """
     Full pipeline for in-memory images:
@@ -216,7 +218,7 @@ def run_pipeline_on_images(
     )
 
     H, ransac_inliers = estimate_homography_ransac(
-        mkpts0_kept, mkpts1_kept, ransac_reproj_threshold=ransac_reproj_threshold
+        mkpts0_kept, mkpts1_kept, ransac_reproj_threshold=ransac_reproj_threshold, max_iters=ransac_max_iters, confidence=ransac_confidence
     )
 
     return MatchResult(
