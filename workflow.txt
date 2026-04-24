@@ -1,0 +1,12 @@
+1. Define interest time stamps (either manual or automatic)
+2. Get the indices around the desired time stamp without considering turnings
+3. Prepare the desired section with PhysDNet
+4. Parse the raw images into MINIMA for matching
+5. Convert matches back into UTM with the orignial pings and indices
+6. Get the final homography
+7. Do the same but with left and right side at the same time
+
+MAX: 
+- Do the homographies with UTM coordinates
+- Debug and find why there are no matches
+- Plot in the trajectory the scans in each indicated timestamp

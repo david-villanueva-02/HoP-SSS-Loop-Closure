@@ -228,18 +228,18 @@ def pre_model(triple_unet, val_loader, weight_path, output_dir, device):
 
 def run_inference(device: torch.device, 
          test_image_path: str, test_range_path: str, test_altitude_path: str, weight_path: str, 
-         output_dir: str, side: str): 
+         output_dir: str, side: str, prefix: str = "output"): 
     
     if side == "left": 
-        test_image_path = test_image_path.replace("output", "output_left")
-        test_range_path = test_range_path.replace("output", "output_left")
-        test_altitude_path = test_altitude_path.replace("output", "output_left")
-        output_dir = output_dir.replace("output", "output_left")
+        test_image_path = test_image_path.replace(prefix, prefix + "_left")
+        test_range_path = test_range_path.replace(prefix, prefix + "_left")
+        test_altitude_path = test_altitude_path.replace(prefix, prefix + "_left")
+        output_dir = output_dir.replace(prefix, prefix + "_left")
     if side == "right": 
-        test_image_path = test_image_path.replace("output", "output_right")
-        test_range_path = test_range_path.replace("output", "output_right")
-        test_altitude_path = test_altitude_path.replace("output", "output_right")
-        output_dir = output_dir.replace("output", "output_right")
+        test_image_path = test_image_path.replace(prefix, prefix + "_right")
+        test_range_path = test_range_path.replace(prefix, prefix + "_right")
+        test_altitude_path = test_altitude_path.replace(prefix, prefix + "_right")
+        output_dir = output_dir.replace(prefix, prefix + "_right")
 
     triple_unet = PhysDNet().to(device)
 

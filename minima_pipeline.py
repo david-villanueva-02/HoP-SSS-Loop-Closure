@@ -4,13 +4,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
-
+import pyxtf 
 import cv2
 import numpy as np
+from physdnet.xtf_utils import calculate_swath_positions
 
-from MINIMA.load_model import load_model
+from hands_on_utils.MINIMA.load_model import load_model
 
-@dataclass # like a structure in C
+@dataclass
 class MatchResult:
     mkpts0: np.ndarray         # (N, 2)
     mkpts1: np.ndarray         # (N, 2)
@@ -201,6 +202,8 @@ def run_pipeline_on_images(
     matcher: MinimaMatcher,
     img0: np.ndarray,
     img1: np.ndarray,
+    pings0: list[pyxtf.XTFHeaderType] = None, 
+    pings1: list[pyxtf.XTFHeaderType] = None,
     mask0: Optional[np.ndarray] = None,
     mask1: Optional[np.ndarray] = None,
     ransac_reproj_threshold: float = 8.0,
@@ -211,12 +214,21 @@ def run_pipeline_on_images(
     Full pipeline for in-memory images:
       image pair -> MINIMA matching -> mask filtering -> homography with RANSAC
     """
+    # Get matches from SuperPoint + LightGlue + MINIMA
     mkpts0, mkpts1, mconf = matcher.match_images(img0, img1)
 
+    # Filter matches with masks
     mkpts0_kept, mkpts1_kept, mconf_kept, keep_mask = filter_matches_with_masks(
         mkpts0, mkpts1, mconf, mask0=mask0, mask1=mask1
     )
 
+    # Convert matches into UTM coordinates
+    if pings0 is not None and pings1 is not None: 
+        
+        pass
+    
+
+    # Estimate homography
     H, ransac_inliers = estimate_homography_ransac(
         mkpts0_kept, mkpts1_kept, ransac_reproj_threshold=ransac_reproj_threshold, max_iters=ransac_max_iters, confidence=ransac_confidence
     )

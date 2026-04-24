@@ -3,19 +3,19 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 
-def terrain_mask(altitude_dir: str, range_dir: str, depth_dir: str, height_output_dir: str, output_folder: str, side: str):
+def terrain_mask(altitude_dir: str, range_dir: str, depth_dir: str, height_output_dir: str, output_folder: str, side: str, prefix: str = "output"):
     if side == "left": 
-        altitude_dir = altitude_dir.replace("output", "output_left")
-        range_dir = range_dir.replace("output", "output_left")
-        depth_dir = depth_dir.replace("output", "output_left")
-        height_output_dir = height_output_dir.replace("output", "output_left")
-        output_folder = output_folder.replace("output", "output_left")
+        altitude_dir = altitude_dir.replace(prefix, prefix + "_left")
+        range_dir = range_dir.replace(prefix, prefix + "_left")
+        depth_dir = depth_dir.replace(prefix, prefix + "_left")
+        height_output_dir = height_output_dir.replace(prefix, prefix + "_left")
+        output_folder = output_folder.replace(prefix, prefix + "_left")
     if side == "right":
-        altitude_dir = altitude_dir.replace("output", "output_right")
-        range_dir = range_dir.replace("output", "output_right")
-        depth_dir = depth_dir.replace("output", "output_right")
-        height_output_dir = height_output_dir.replace("output", "output_right")
-        output_folder = output_folder.replace("output", "output_right")
+        altitude_dir = altitude_dir.replace(prefix, prefix + "_right")
+        range_dir = range_dir.replace(prefix, prefix + "_right")
+        depth_dir = depth_dir.replace(prefix, prefix + "_right")
+        height_output_dir = height_output_dir.replace(prefix, prefix + "_right")
+        output_folder = output_folder.replace(prefix, prefix + "_right")
 
     os.makedirs(height_output_dir, exist_ok=True)
     os.makedirs(output_folder, exist_ok=True)
@@ -85,7 +85,7 @@ def terrain_mask(altitude_dir: str, range_dir: str, depth_dir: str, height_outpu
 
 
     input_folder = height_output_dir
-    k = 1
+    k = 1 # harcoded!?!??
     for idx, filename in enumerate(os.listdir(input_folder)):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')):
             img_path = os.path.join(input_folder, filename)
