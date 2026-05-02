@@ -23,13 +23,13 @@ class InferenceResult:
     Arrays are uint8 grayscale (H, W) unless noted.
     'theta', 'z', 'path', 'rho' colourmap images are uint8 RGB (H, W, 3).
     """
-    z:       dict[str, np.ndarray] = field(default_factory=dict)  # height – colourmap RGB
-    z_gray:  dict[str, np.ndarray] = field(default_factory=dict)  # height – grayscale
-    rho:     dict[str, np.ndarray] = field(default_factory=dict)  # reflectivity – colourmap RGB
-    rho_gray:dict[str, np.ndarray] = field(default_factory=dict)  # reflectivity – grayscale
-    path:    dict[str, np.ndarray] = field(default_factory=dict)  # path loss – colourmap RGB
-    theta:   dict[str, np.ndarray] = field(default_factory=dict)  # incidence factor – colourmap RGB
-    shadow:  dict[str, np.ndarray] = field(default_factory=dict)  # shadow mask – binary uint8
+    z:        dict[str, np.ndarray] = field(default_factory=dict)  # height – colourmap RGB
+    z_gray:   dict[str, np.ndarray] = field(default_factory=dict)  # height – grayscale
+    rho:      dict[str, np.ndarray] = field(default_factory=dict)  # reflectivity – colourmap RGB
+    rho_gray: dict[str, np.ndarray] = field(default_factory=dict)  # reflectivity – grayscale
+    path:     dict[str, np.ndarray] = field(default_factory=dict)  # path loss – colourmap RGB
+    theta:    dict[str, np.ndarray] = field(default_factory=dict)  # incidence factor – colourmap RGB
+    shadow:   dict[str, np.ndarray] = field(default_factory=dict)  # shadow mask – binary uint8
 
 
 # ──────────────────────────────────────────────────────────────────────────── #
@@ -49,8 +49,9 @@ class InMemorySonarDataset(Dataset):
     name     : label string used as the dict key in InferenceResult
     """
 
-    _RESIZE = transforms.Resize((512, 512))
-    _1D_SIZE = (1, 512)
+    _TARGET_SIZE = 1024
+    _RESIZE = transforms.Resize((_TARGET_SIZE, _TARGET_SIZE))
+    _1D_SIZE = (1, _TARGET_SIZE)
 
     def __init__(
         self,
@@ -74,15 +75,15 @@ class InMemorySonarDataset(Dataset):
         # ── Image: float32 in [0, 1], shape (1, H, W) ──────────────────────
         img_f32 = self._image.astype(np.float32) / 255.0
         tensor  = torch.tensor(img_f32).unsqueeze(0)   # (1, H, W)
-        tensor  = self._RESIZE(tensor)                 # (1, 512, 512)
+        tensor  = self._RESIZE(tensor)                 # (1, 1024, 1024)
 
-        # ── Range: resample to length 512 ───────────────────────────────────
+        # ── Range: resample to length 1024 ─────────────────────────────────
         rng = self._range.astype(np.float32)
         rng_resized = cv2.resize(
             rng.reshape(-1, 1), self._1D_SIZE, interpolation=cv2.INTER_LINEAR
         ).flatten()
 
-        # ── Altitude: resample to length 512 ────────────────────────────────
+        # ── Altitude: resample to length 1024 ──────────────────────────────
         alt = self._altitude.astype(np.float32)
         alt_resized = cv2.resize(
             alt.reshape(-1, 1), self._1D_SIZE, interpolation=cv2.INTER_LINEAR
@@ -94,13 +95,17 @@ class InMemorySonarDataset(Dataset):
 # ──────────────────────────────────────────────────────────────────────────── #
 #  Pure helper: tensor → uint8 colourmap image (no saving)                     #
 # ──────────────────────────────────────────────────────────────────────────── #
+
 def compute_real_dis(A: torch.Tensor, M_list: torch.Tensor) -> torch.Tensor:
     M, N = A.shape
+
     if M_list.shape[0] != M:
         raise ValueError("The length of M_list must be equal to the number of matrix rows M")
+
     device = A.device
-    col_indices = torch.arange(N, device=device)
-    D = (M_list[:, None] * col_indices[None, :]) / 512.0
+    col_indices = torch.arange(N, device=device, dtype=A.dtype)
+
+    D = (M_list[:, None] * col_indices[None, :]) / float(N)
 
     return D
 
@@ -209,12 +214,12 @@ def _run_model(
                 # name = os.path.splitext(filenames[b])[0]
                 name = filenames[b]
 
-                z_b       = z[b, 0].to(device)
-                rho_b     = rho[b, 0].to(device)
-                path_b    = path[b, 0].to(device)
-                x_b       = x[b, 0].to(device)
-                range_b   = sss_range[b].to(device)
-                altitude_b= sss_altitude[b].to(device)
+                z_b        = z[b, 0].to(device)
+                rho_b      = rho[b, 0].to(device)
+                path_b     = path[b, 0].to(device)
+                x_b        = x[b, 0].to(device)
+                range_b    = sss_range[b].to(device)
+                altitude_b = sss_altitude[b].to(device)
 
                 # ── Derived geometry ────────────────────────────────────────
                 slant     = compute_real_dis(x_b, range_b)
@@ -223,23 +228,23 @@ def _run_model(
 
                 # ── Shadow (differentiable soft version) ────────────────────
                 delta, temperature = 0.1, 0.05
-                tan_phi      = hori / z_b.clamp(min=1e-3)
-                phi_deg      = torch.rad2deg(torch.atan(tan_phi))
-                cummax, _    = torch.cummax(phi_deg, dim=1)
-                shadow_logits= (cummax - phi_deg - delta) / temperature
-                shadow_b     = (
+                tan_phi       = hori / z_b.clamp(min=1e-3)
+                phi_deg       = torch.rad2deg(torch.atan(tan_phi))
+                cummax, _     = torch.cummax(phi_deg, dim=1)
+                shadow_logits = (cummax - phi_deg - delta) / temperature
+                shadow_b      = (
                     (torch.sigmoid(shadow_logits) > 0.5).to(torch.uint8)
                     | (tan_phi <= 0)
                 )
 
                 # ── Store as arrays ─────────────────────────────────────────
-                result.z      [name] = _tensor_to_colormap(cos_theta, cmap="seismic")
-                result.z_gray [name] = _tensor_to_gray(z_b)
-                result.rho    [name] = _tensor_to_colormap(rho_b,     cmap="seismic")
-                result.rho_gray[name]= _tensor_to_gray(rho_b)
-                result.path   [name] = _tensor_to_colormap(path_b,    cmap="seismic")
-                result.theta  [name] = _tensor_to_colormap(cos_theta, cmap="seismic")
-                result.shadow [name] = _tensor_to_binary(shadow_b)
+                result.z       [name] = _tensor_to_colormap(cos_theta, cmap="seismic")
+                result.z_gray  [name] = _tensor_to_gray(z_b)
+                result.rho     [name] = _tensor_to_colormap(rho_b,     cmap="seismic")
+                result.rho_gray[name] = _tensor_to_gray(rho_b)
+                result.path    [name] = _tensor_to_colormap(path_b,    cmap="seismic")
+                result.theta   [name] = _tensor_to_colormap(cos_theta, cmap="seismic")
+                result.shadow  [name] = _tensor_to_binary(shadow_b)
 
     return result
 
@@ -305,6 +310,7 @@ def run_inference(
         print(f"Processed {img_key}")
 
     return combined
+
 
 # ──────────────────────────────────────────────────────────────────────────── #
 #  Saving utility (call only when you want files on disk)                      #
