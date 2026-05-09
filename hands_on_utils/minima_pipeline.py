@@ -263,10 +263,11 @@ def prepare_side_image_and_mask(
         'rho_gray' -> use inference_obj.rho_gray
         'raw'      -> use section_obj.images
 
-    The left image is flipped horizontally.
+    The left image is flipped horizontally when flip_left_image=True.
 
-    The left mask is NOT flipped. This avoids double-flipping or misaligning
-    terrain_obj.final_mask when using MATCH_MODE='left-left' or MATCH_MODE='both'.
+    terrain_obj.final_mask is expected to already be in the same orientation as
+    the image used for matching. In the standard pipeline, xtf_utils.combine_masks()
+    flips the final left mask once during mask construction.
 
     The right image and right mask are kept unchanged.
     """
@@ -419,27 +420,42 @@ def extract_swaths_from_calculate_output(output) -> np.ndarray:
     return output
 
 
-def get_swaths_for_side(pings: list[pyxtf.XTFPingHeader], side: str) -> np.ndarray:
+def get_swaths_for_side(
+    pings: list[pyxtf.XTFPingHeader],
+    side: str,
+    flip_left_side: bool = True,
+) -> np.ndarray:
     """
     Calculates the swath grid and selects the part corresponding to the image.
 
     side='left'  -> first half of the swath grid
     side='right' -> second half of the swath grid
     side='both'  -> full swath grid
+
+    When flip_left_side=True, the left swath grid is horizontally flipped to
+    stay consistent with the left image orientation used for matching. This is
+    required so pixels from a flipped left image are converted to the correct
+    UTM coordinates.
     """
     swaths = extract_swaths_from_calculate_output(calculate_swath_positions(pings))
 
     side = side.lower()
     mid = swaths.shape[1] // 2
 
+    left_swaths = swaths[:, :mid, :]
+    right_swaths = swaths[:, mid:, :]
+
+    if flip_left_side:
+        left_swaths = np.ascontiguousarray(np.flip(left_swaths, axis=1))
+
     if side == "left":
-        return swaths[:, :mid, :]
+        return left_swaths
 
     if side == "right":
-        return swaths[:, mid:, :]
+        return right_swaths
 
     if side == "both":
-        return swaths
+        return np.ascontiguousarray(np.concatenate([left_swaths, right_swaths], axis=1))
 
     raise ValueError(f"Invalid swath side: {side}")
 
@@ -1167,7 +1183,8 @@ def warp_and_overlay(
 
 def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     """
-    Displays inputs, masks, matches, and pixel-domain overlay.
+    Displays inputs, masks, matches, homographies, homography parameters,
+    and pixel-domain overlay.
     """
     print("Mode:                    ", result.mode)
     print("Image source:            ", result.image_source)
@@ -1178,6 +1195,17 @@ def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     print("\nPixel homography H_pixel:")
     print(result.H_pixel)
 
+    # Pixel-domain Euclidean homography parameters
+    tx_pixel, ty_pixel, theta_pixel, theta_pixel_deg = extract_euclidean_homography_params(
+        result.H_pixel
+    )
+
+    print("\nPixel homography parameters:")
+    print(f"tx_pixel:        {tx_pixel} px")
+    print(f"ty_pixel:        {ty_pixel} px")
+    print(f"theta_pixel:     {theta_pixel} rad")
+    print(f"theta_pixel_deg: {theta_pixel_deg} deg")
+
     print("\nUTM homography H_utm:")
     print(result.H_utm)
 
@@ -1185,14 +1213,14 @@ def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     print(result.H_utm_local)
 
     print("\nUTM homography parameters:")
-    print(f"tx_utm:        {result.tx_utm}")
-    print(f"ty_utm:        {result.ty_utm}")
+    print(f"tx_utm:        {result.tx_utm} m")
+    print(f"ty_utm:        {result.ty_utm} m")
     print(f"theta_utm:     {result.theta_utm} rad")
     print(f"theta_utm_deg: {result.theta_utm_deg} deg")
 
     print("\nLocal UTM homography parameters:")
-    print(f"tx_utm_local:        {result.tx_utm_local}")
-    print(f"ty_utm_local:        {result.ty_utm_local}")
+    print(f"tx_utm_local:        {result.tx_utm_local} m")
+    print(f"ty_utm_local:        {result.ty_utm_local} m")
     print(f"theta_utm_local:     {result.theta_utm_local} rad")
     print(f"theta_utm_local_deg: {result.theta_utm_local_deg} deg")
 
