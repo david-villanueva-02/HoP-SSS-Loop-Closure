@@ -16,6 +16,10 @@ from RANSAC.projection_error import projection_error
 from xtf_utils import calculate_swath_positions
 
 
+from dataclasses import dataclass
+from typing import Optional
+import numpy as np
+
 @dataclass
 class RegistrationResult:
     mode: str
@@ -34,6 +38,17 @@ class RegistrationResult:
     mkpts0_kept: np.ndarray
     mkpts1_kept: np.ndarray
     mconf_kept: np.ndarray
+
+    # UTM distance pre-filter information.
+    # mkpts*_utm contain all matches after image/mask filtering.
+    # mkpts*_utm_ransac contain the subset passed to UTM RANSAC after
+    # optional distance filtering.
+    apply_utm_distance_filter: bool
+    utm_distance_threshold: Optional[float]
+    utm_match_distances: Optional[np.ndarray]
+    utm_distance_keep_mask: Optional[np.ndarray]
+    mkpts0_utm_ransac: Optional[np.ndarray]
+    mkpts1_utm_ransac: Optional[np.ndarray]
 
     mkpts0_utm: Optional[np.ndarray]
     mkpts1_utm: Optional[np.ndarray]
@@ -64,6 +79,8 @@ class RegistrationResult:
 
     num_matches: int
     num_matches_after_mask: int
+    num_matches_after_utm_distance_filter: int
+    num_utm_distance_rejected: int
     num_ransac_inliers: int
 
 
@@ -1183,8 +1200,7 @@ def warp_and_overlay(
 
 def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     """
-    Displays inputs, masks, matches, homographies, homography parameters,
-    and pixel-domain overlay.
+    Displays inputs, masks, matches, and pixel-domain overlay.
     """
     print("Mode:                    ", result.mode)
     print("Image source:            ", result.image_source)
@@ -1195,17 +1211,6 @@ def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     print("\nPixel homography H_pixel:")
     print(result.H_pixel)
 
-    # Pixel-domain Euclidean homography parameters
-    tx_pixel, ty_pixel, theta_pixel, theta_pixel_deg = extract_euclidean_homography_params(
-        result.H_pixel
-    )
-
-    print("\nPixel homography parameters:")
-    print(f"tx_pixel:        {tx_pixel} px")
-    print(f"ty_pixel:        {ty_pixel} px")
-    print(f"theta_pixel:     {theta_pixel} rad")
-    print(f"theta_pixel_deg: {theta_pixel_deg} deg")
-
     print("\nUTM homography H_utm:")
     print(result.H_utm)
 
@@ -1213,14 +1218,14 @@ def show_registration_result(result: RegistrationResult, max_draw: int = 300):
     print(result.H_utm_local)
 
     print("\nUTM homography parameters:")
-    print(f"tx_utm:        {result.tx_utm} m")
-    print(f"ty_utm:        {result.ty_utm} m")
+    print(f"tx_utm:        {result.tx_utm}")
+    print(f"ty_utm:        {result.ty_utm}")
     print(f"theta_utm:     {result.theta_utm} rad")
     print(f"theta_utm_deg: {result.theta_utm_deg} deg")
 
     print("\nLocal UTM homography parameters:")
-    print(f"tx_utm_local:        {result.tx_utm_local} m")
-    print(f"ty_utm_local:        {result.ty_utm_local} m")
+    print(f"tx_utm_local:        {result.tx_utm_local}")
+    print(f"ty_utm_local:        {result.ty_utm_local}")
     print(f"theta_utm_local:     {result.theta_utm_local} rad")
     print(f"theta_utm_local_deg: {result.theta_utm_local_deg} deg")
 

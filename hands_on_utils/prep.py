@@ -166,10 +166,10 @@ def prepare_data_range(
     process_right = side in ("right", "both")
 
     if process_left:
-        flipped_left = np.fliplr(left_norm)
-        left_shadow  = generate_shadow(flipped_left)
+        # flipped_left = np.fliplr(left_norm)
+        left_shadow  = generate_shadow(left_norm)
 
-        result.images   [f"{base}_left"]    = flipped_left
+        result.images   [f"{base}_left"]    = left_norm
         result.shadows  [f"{base}_left"]    = left_shadow
         result.altitudes[f"{base}_left"]    = altitude_arr
         result.ranges   [f"{base}_left"]    = range_left_arr

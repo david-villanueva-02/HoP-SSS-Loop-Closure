@@ -300,42 +300,55 @@ def get_range_window(group: np.ndarray, timestamp: int, len_range: int = LEN_RAN
 
 def combine_masks(masks: list[np.ndarray], side: str) -> np.ndarray:
     """
-    Combines multiple binary masks into one by taking the union of their valid areas.
+    Combines multiple binary masks into one by taking the union of their
+    rejected areas.
 
     Parameters
     ----------
-    masks : list of uint8 grayscale arrays — masks to combine
-    side  : "left" or "right". When "left", all masks except the last are
-            horizontally flipped before combining, to match the left channel's
-            mirrored orientation.
+    masks : list of uint8 grayscale arrays — masks to combine.
+            Non-zero pixels are treated as rejected/invalid.
+    side  : "left" or "right". The final left mask is horizontally flipped
+            once so it has the same orientation as the left image used for
+            matching. The right mask is kept unchanged.
 
     Returns
     -------
-    combined : uint8 grayscale array (H, W) — union of all input masks
+    combined : uint8 grayscale array (H, W) — black=valid, white=rejected.
     """
     if not masks:
         raise ValueError("masks list is empty")
 
-    target_shape = masks[0].shape
+    side = side.lower().strip()
+    if side not in {"left", "right"}:
+        raise ValueError("side must be either 'left' or 'right'")
+
+    target_shape = masks[0].shape[:2]
 
     normalised = []
-    for i, mask in enumerate(masks):
-        # Resize to target shape if needed
-        if mask.shape != target_shape:
+    for mask in masks:
+        # Convert to a 2-D mask if needed.
+        if mask.ndim == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+        # Resize to target shape if needed.
+        if mask.shape[:2] != target_shape:
             mask = cv2.resize(
                 mask,
                 (target_shape[1], target_shape[0]),
                 interpolation=cv2.INTER_NEAREST,
             )
 
-        # Flip all but the last mask when processing the left channel
-        if side == "left" and i < len(masks) - 1:
-            mask = np.fliplr(mask)
-
         normalised.append(mask)
 
     combined = (sum(m > 0 for m in normalised) > 0).astype(np.uint8) * 255
-    return combined
+
+    # The left image is flipped horizontally before matching. Flip the final
+    # combined left mask once here so terrain.final_mask is stored in the same
+    # pixel orientation as the image that MINIMA/LightGlue/SIFT receives.
+    if side == "left":
+        combined = np.fliplr(combined)
+
+    return np.ascontiguousarray(combined)
 
 def prepare_mask(mask: torch.Tensor, device):
     mask = mask.to(device)
