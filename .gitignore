@@ -18,3 +18,4 @@
 /data/*.db
 /output*
 /model
+/.sss_venv
