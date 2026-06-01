@@ -1,21 +1,41 @@
+# Editors / build
 .vscode
+.idea
 /build
 /install
 /log
-/.Manitas_venv
-/__pycache__/*
+
+# Python caches
 **/__pycache__
+/__pycache__/*
+.ipynb_checkpoints/
+
+# Nested git metadata
 **/.git
 **/.github
+
+# Virtual environments
+/.sss_venv
+/.Manitas_venv
+
+# OS / archives
 **.DS_Store
 **.zip
+
+# External repositories -- clone these yourself (see README.md "Setup")
+/LightGlue/
+/MINIMA/
+
+# Model weights -- download separately (see weights/README.md)
 **.pth
-**/docs
-**/pyreverse_output
+
+# Raw sonar data -- provide your own (see data/README.md)
 /data/*.png
 /data/*.tiff
 /data/*.xtf
 /data/*.db
+
+# Generated outputs
 /output*
 /model
-/.sss_venv
+/pyreverse_output

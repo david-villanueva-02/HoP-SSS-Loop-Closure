@@ -1,16 +1,32 @@
-typeguard
+# Runtime for the SSS feature-matching report pipeline (the src/ modules + notebooks/).
+#
+# LightGlue and MINIMA are NOT installed from here. Clone them at the repo root and
+# follow their own install steps -- see README.md, section "Setup".
 
-# Check CUDA version compatibility for PyTorch
+# PyTorch -- match the build to your CUDA version: https://pytorch.org/get-started/
 torch
 torchvision
 
-numpy 
-pyproj 
-pyxtf 
-shapely
-scikit-learn
-transformers
+# Numerics / IO / vision
+numpy
+scipy
 opencv-python
-rpds-py
+Pillow
+matplotlib
+tqdm
+
+# Sonar + geospatial
+pyxtf            # XTF side-scan sonar file parsing
+pyproj           # UTM projection (EPSG:25831)
+shapely
+
+# PhysDNet inference / training helpers (src/train.py, src/inference.py)
+pytorch-msssim   # SSIM metric/loss
+transformers     # LR scheduler
+scikit-learn
+
+# Pulled in by the matcher backends / MINIMA
 kornia
 yacs
+typeguard
+rpds-py
