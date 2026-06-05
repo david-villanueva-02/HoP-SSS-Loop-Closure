@@ -86,6 +86,22 @@ output_simplified/         Generated reports (git-ignored)
 See [`docs/PIPELINE.md`](docs/PIPELINE.md) for the full parameter reference, the default sweep, the
 filtering stages, and how to read every plot.
 
+## Quick single-pair runs
+
+For fast, interactive results with one specific parameter set — instead of the full multi-method
+sweep — use [`notebooks/configurable_backend_pipeline2.ipynb`](notebooks/configurable_backend_pipeline2.ipynb).
+It runs **one** matcher on **one** timestamp pair, so it's the quickest way to try a configuration:
+
+1. In the config cell, set `timestamp1` / `timestamp2`, pick `MATCHER_BACKEND`
+   (`"sift"`, `"lightglue_superpoint"`, `"lightglue_sift"`, or `"minima_sp_lg"`) and `IMAGE_SOURCE`
+   (`"raw"` or `"rho_gray"`).
+2. Tune that backend's parameters (the `SIFT_*`, `LIGHTGLUE_*`, RANSAC and mask settings — same names
+   documented in [`docs/PIPELINE.md`](docs/PIPELINE.md) → "Configuration reference").
+3. Run all cells to inspect the matches and registration for that single configuration.
+
+Use this to find good parameters quickly, then move them into `auto_report.ipynb`'s `SWEEP_SPECS` to
+compare across methods and pairs.
+
 ## Choosing timestamps
 
 `TIMESTAMP_PAIRS` are ping indices into the loaded survey. The notebook keeps only straight-line
